@@ -351,7 +351,7 @@ class ImageLoaderBuilder(context: Context) {
             defaults = defaults,
             bitmapPool = bitmapPool,
             referenceCounter = referenceCounter,
-            memoryCache = memoryCache,
+            strongMemoryCache = memoryCache,
             weakMemoryCache = weakMemoryCache,
             callFactory = callFactory ?: buildDefaultCallFactory(),
             eventListenerFactory = eventListenerFactory ?: EventListener.Factory.NONE,

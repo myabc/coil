@@ -6,7 +6,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.MainThread
 import coil.bitmappool.BitmapPool
-import coil.memory.PublicMemoryCache
+import coil.memory.MemoryCache
 import coil.request.ErrorResult
 import coil.request.GetRequest
 import coil.request.LoadRequest
@@ -48,7 +48,7 @@ interface ImageLoader {
     /**
      * An in-memory cache of [Bitmap]s.
      */
-    val memoryCache: PublicMemoryCache
+    val memoryCache: MemoryCache
 
     /**
      * An object pool of reusable [Bitmap]s.
