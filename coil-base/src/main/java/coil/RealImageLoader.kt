@@ -27,8 +27,6 @@ import coil.fetch.HttpUrlFetcher
 import coil.fetch.ResourceUriFetcher
 import coil.fetch.SourceResult
 import coil.map.FileUriMapper
-import coil.map.Mapper
-import coil.map.MeasuredMapper
 import coil.map.ResourceIntMapper
 import coil.map.ResourceUriMapper
 import coil.map.StringMapper
@@ -57,19 +55,19 @@ import coil.transform.Transformation
 import coil.util.Emoji
 import coil.util.Logger
 import coil.util.SystemCallbacks
+import coil.util.assertMainThread
 import coil.util.awaitStarted
 import coil.util.closeQuietly
 import coil.util.emoji
 import coil.util.firstNotNullIndices
 import coil.util.foldIndices
-import coil.util.forEachIndices
-import coil.util.get
 import coil.util.job
 import coil.util.log
+import coil.util.mapData
 import coil.util.placeholderOrDefault
-import coil.util.put
 import coil.util.requestManager
 import coil.util.safeConfig
+import coil.util.set
 import coil.util.takeIf
 import coil.util.toDrawable
 import coil.util.validateFetcher
@@ -90,7 +88,7 @@ import kotlin.coroutines.coroutineContext
 internal class RealImageLoader(
     private val context: Context,
     override val defaults: DefaultRequestOptions,
-    private val bitmapPool: BitmapPool,
+    override val bitmapPool: BitmapPool,
     private val referenceCounter: BitmapReferenceCounter,
     private val memoryCache: MemoryCache,
     private val weakMemoryCache: WeakMemoryCache,
@@ -199,7 +197,7 @@ internal class RealImageLoader(
 
             // Perform any data mapping.
             eventListener.mapStart(request, data)
-            val mappedData = mapData(data, lazySizeResolver)
+            val mappedData = registry.mapData(data) { lazySizeResolver.size() }
             eventListener.mapEnd(request, mappedData)
 
             // Compute the cache key.
@@ -210,7 +208,13 @@ internal class RealImageLoader(
             // Check the memory cache.
             val memoryCachePolicy = request.memoryCachePolicy ?: defaults.memoryCachePolicy
             val cachedValue = takeIf(memoryCachePolicy.readEnabled) {
-                memoryCache.get(cacheKey) ?: request.aliasKeys.firstNotNullIndices { memoryCache.get(MemoryCache.Key(it)) }
+                cacheKey ?: return@takeIf null
+                memoryCache.get(cacheKey)?.let { return@takeIf it }
+                weakMemoryCache.get(cacheKey)?.let { return@takeIf it }
+                request.aliasKeys.firstNotNullIndices {
+                    val key = MemoryCache.Key(it)
+                    memoryCache.get(key) ?: weakMemoryCache.get(key)
+                }
             }
 
             // Ignore the cached bitmap if it is hardware-backed and the request disallows hardware bitmaps.
@@ -238,7 +242,7 @@ internal class RealImageLoader(
 
             // Cache the result.
             if (memoryCachePolicy.writeEnabled) {
-                memoryCache.put(cacheKey, drawable, isSampled)
+                memoryCache.set(cacheKey, drawable, isSampled)
             }
 
             // Set the result on the target.
@@ -264,24 +268,6 @@ internal class RealImageLoader(
         } finally {
             requestDelegate.onComplete()
         }
-    }
-
-    /** Map [data] using the components registered in [registry]. */
-    @Suppress("UNCHECKED_CAST")
-    @VisibleForTesting
-    internal suspend inline fun mapData(data: Any, lazySizeResolver: LazySizeResolver): Any {
-        var mappedData = data
-        registry.measuredMappers.forEachIndices { (type, mapper) ->
-            if (type.isAssignableFrom(mappedData::class.java) && (mapper as MeasuredMapper<Any, *>).handles(mappedData)) {
-                mappedData = mapper.map(mappedData, lazySizeResolver.size())
-            }
-        }
-        registry.mappers.forEachIndices { (type, mapper) ->
-            if (type.isAssignableFrom(mappedData::class.java) && (mapper as Mapper<Any, *>).handles(mappedData)) {
-                mappedData = mapper.map(mappedData)
-            }
-        }
-        return mappedData
     }
 
     /** Compute the cache key for the [data] + [parameters] + [transformations] + [lazySizeResolver]. */
@@ -407,12 +393,6 @@ internal class RealImageLoader(
         return transformedResult
     }
 
-    override fun invalidate(key: String) {
-        val cacheKey = MemoryCache.Key(key)
-        memoryCache.invalidate(cacheKey)
-        weakMemoryCache.invalidate(cacheKey)
-    }
-
     /** Called by [SystemCallbacks.onTrimMemory]. */
     fun onTrimMemory(level: Int) {
         memoryCache.trimMemory(level)
@@ -420,19 +400,16 @@ internal class RealImageLoader(
         bitmapPool.trimMemory(level)
     }
 
-    override fun clearMemory() {
-        memoryCache.clearMemory()
-        weakMemoryCache.clearMemory()
-        bitmapPool.clear()
-    }
-
     override fun shutdown() {
+        assertMainThread()
         if (isShutdown) return
         isShutdown = true
 
         loaderScope.cancel()
         systemCallbacks.shutdown()
-        clearMemory()
+        memoryCache.clearMemory()
+        weakMemoryCache.clearMemory()
+        bitmapPool.clear()
     }
 
     /** Lazily resolves and caches a request's size. */
