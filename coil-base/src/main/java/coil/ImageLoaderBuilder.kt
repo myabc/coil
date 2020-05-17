@@ -14,8 +14,8 @@ import coil.bitmappool.RealBitmapPool
 import coil.drawable.CrossfadeDrawable
 import coil.memory.BitmapReferenceCounter
 import coil.memory.EmptyWeakMemoryCache
-import coil.memory.MemoryCache
 import coil.memory.RealWeakMemoryCache
+import coil.memory.StrongMemoryCache
 import coil.request.CachePolicy
 import coil.request.Request
 import coil.size.Precision
@@ -344,7 +344,7 @@ class ImageLoaderBuilder(context: Context) {
         val bitmapPool = RealBitmapPool(bitmapPoolSize, logger = logger)
         val weakMemoryCache = if (trackWeakReferences) RealWeakMemoryCache() else EmptyWeakMemoryCache
         val referenceCounter = BitmapReferenceCounter(weakMemoryCache, bitmapPool, logger)
-        val memoryCache = MemoryCache(weakMemoryCache, referenceCounter, memoryCacheSize, logger)
+        val memoryCache = StrongMemoryCache(weakMemoryCache, referenceCounter, memoryCacheSize, logger)
 
         return RealImageLoader(
             context = applicationContext,

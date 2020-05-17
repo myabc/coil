@@ -32,9 +32,9 @@ import coil.map.ResourceUriMapper
 import coil.map.StringMapper
 import coil.memory.BitmapReferenceCounter
 import coil.memory.DelegateService
-import coil.memory.MemoryCache
 import coil.memory.MemoryCacheService
 import coil.memory.RequestService
+import coil.memory.StrongMemoryCache
 import coil.memory.TargetDelegate
 import coil.memory.WeakMemoryCache
 import coil.request.BaseTargetRequestDisposable
@@ -90,7 +90,7 @@ internal class RealImageLoader(
     override val defaults: DefaultRequestOptions,
     override val bitmapPool: BitmapPool,
     private val referenceCounter: BitmapReferenceCounter,
-    private val memoryCache: MemoryCache,
+    private val strongMemoryCache: StrongMemoryCache,
     private val weakMemoryCache: WeakMemoryCache,
     callFactory: Call.Factory,
     private val eventListenerFactory: EventListener.Factory,
@@ -202,18 +202,18 @@ internal class RealImageLoader(
 
             // Compute the cache key.
             val fetcher = request.validateFetcher(mappedData) ?: registry.requireFetcher(mappedData)
-            val cacheKey = request.key?.let { MemoryCache.Key(it) }
+            val cacheKey = request.key?.let { StrongMemoryCache.Key(it) }
                 ?: computeCacheKey(fetcher, mappedData, request.parameters, request.transformations, lazySizeResolver)
 
             // Check the memory cache.
             val memoryCachePolicy = request.memoryCachePolicy ?: defaults.memoryCachePolicy
             val cachedValue = takeIf(memoryCachePolicy.readEnabled) {
                 cacheKey ?: return@takeIf null
-                memoryCache.get(cacheKey)?.let { return@takeIf it }
+                strongMemoryCache.get(cacheKey)?.let { return@takeIf it }
                 weakMemoryCache.get(cacheKey)?.let { return@takeIf it }
                 request.aliasKeys.firstNotNullIndices {
-                    val key = MemoryCache.Key(it)
-                    memoryCache.get(key) ?: weakMemoryCache.get(key)
+                    val key = StrongMemoryCache.Key(it)
+                    strongMemoryCache.get(key) ?: weakMemoryCache.get(key)
                 }
             }
 
@@ -242,7 +242,7 @@ internal class RealImageLoader(
 
             // Cache the result.
             if (memoryCachePolicy.writeEnabled) {
-                memoryCache.set(cacheKey, drawable, isSampled)
+                strongMemoryCache.set(cacheKey, drawable, isSampled)
             }
 
             // Set the result on the target.
@@ -278,14 +278,14 @@ internal class RealImageLoader(
         parameters: Parameters,
         transformations: List<Transformation>,
         lazySizeResolver: LazySizeResolver
-    ): MemoryCache.Key? {
+    ): StrongMemoryCache.Key? {
         val baseKey = fetcher.key(data) ?: return null
 
         return if (transformations.isEmpty()) {
-            MemoryCache.Key(baseKey, parameters)
+            StrongMemoryCache.Key(baseKey, parameters)
         } else {
             // Resolve the size if there are any transformations.
-            MemoryCache.Key(baseKey, transformations, lazySizeResolver.size(), parameters)
+            StrongMemoryCache.Key(baseKey, transformations, lazySizeResolver.size(), parameters)
         }
     }
 
@@ -395,7 +395,7 @@ internal class RealImageLoader(
 
     /** Called by [SystemCallbacks.onTrimMemory]. */
     fun onTrimMemory(level: Int) {
-        memoryCache.trimMemory(level)
+        strongMemoryCache.trimMemory(level)
         weakMemoryCache.trimMemory(level)
         bitmapPool.trimMemory(level)
     }
@@ -407,7 +407,7 @@ internal class RealImageLoader(
 
         loaderScope.cancel()
         systemCallbacks.shutdown()
-        memoryCache.clearMemory()
+        strongMemoryCache.clearMemory()
         weakMemoryCache.clearMemory()
         bitmapPool.clear()
     }
