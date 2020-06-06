@@ -3,12 +3,11 @@ package coil.util
 import android.util.Log
 
 import coil.ImageLoader
-import coil.ImageLoaderBuilder
 
 /**
  * Logging interface for [ImageLoader]s.
  *
- * @see ImageLoaderBuilder.logger
+ * @see ImageLoader.Builder.logger
  * @see DebugLogger
  */
 interface Logger {

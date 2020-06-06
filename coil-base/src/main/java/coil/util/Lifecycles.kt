@@ -7,6 +7,7 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State.STARTED
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -18,16 +19,19 @@ internal suspend inline fun Lifecycle.awaitStarted() {
     if (currentState.isAtLeast(STARTED)) return
 
     // Slow path: observe the lifecycle until we're started.
-    suspendCancellableCoroutine<Unit> { continuation ->
-        val observer = object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) {
-                removeObserver(this)
-                continuation.resume(Unit)
+    try {
+        var observer: LifecycleObserver? = null
+        suspendCancellableCoroutine<Unit> { continuation ->
+            observer = object : DefaultLifecycleObserver {
+                override fun onStart(owner: LifecycleOwner) {
+                    removeObserver(this)
+                    continuation.resume(Unit)
+                }
             }
+            observer?.let(::addObserver)
         }
-        continuation.invokeOnCancellation {
-            removeObserver(observer)
-        }
-        addObserver(observer)
+        observer?.let(::removeObserver)
+    } finally {
+
     }
 }
