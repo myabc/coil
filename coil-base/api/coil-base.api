@@ -56,9 +56,9 @@ public final class coil/DefaultRequestOptions {
 public abstract interface class coil/EventListener : coil/request/ImageRequest$Listener {
 	public static final field Companion Lcoil/EventListener$Companion;
 	public static final field NONE Lcoil/EventListener;
-	public abstract fun decodeEnd (Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;)V
+	public abstract fun decodeEnd (Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;Lcoil/decode/DecodeResult;)V
 	public abstract fun decodeStart (Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;)V
-	public abstract fun fetchEnd (Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;)V
+	public abstract fun fetchEnd (Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;Lcoil/fetch/FetchResult;)V
 	public abstract fun fetchStart (Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;)V
 	public abstract fun mapEnd (Lcoil/request/ImageRequest;Ljava/lang/Object;)V
 	public abstract fun mapStart (Lcoil/request/ImageRequest;Ljava/lang/Object;)V
@@ -69,8 +69,8 @@ public abstract interface class coil/EventListener : coil/request/ImageRequest$L
 	public abstract fun onSuccess (Lcoil/request/ImageRequest;Lcoil/decode/DataSource;)V
 	public abstract fun resolveSizeEnd (Lcoil/request/ImageRequest;Lcoil/size/Size;)V
 	public abstract fun resolveSizeStart (Lcoil/request/ImageRequest;)V
-	public abstract fun transformEnd (Lcoil/request/ImageRequest;)V
-	public abstract fun transformStart (Lcoil/request/ImageRequest;)V
+	public abstract fun transformEnd (Lcoil/request/ImageRequest;Ljava/util/List;Landroid/graphics/Bitmap;)V
+	public abstract fun transformStart (Lcoil/request/ImageRequest;Ljava/util/List;Landroid/graphics/Bitmap;)V
 	public abstract fun transitionEnd (Lcoil/request/ImageRequest;Lcoil/transition/Transition;)V
 	public abstract fun transitionStart (Lcoil/request/ImageRequest;Lcoil/transition/Transition;)V
 }
@@ -79,9 +79,9 @@ public final class coil/EventListener$Companion {
 }
 
 public final class coil/EventListener$DefaultImpls {
-	public static fun decodeEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;)V
+	public static fun decodeEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;Lcoil/decode/DecodeResult;)V
 	public static fun decodeStart (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/decode/Decoder;Lcoil/decode/Options;)V
-	public static fun fetchEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;)V
+	public static fun fetchEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;Lcoil/fetch/FetchResult;)V
 	public static fun fetchStart (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/fetch/Fetcher;Lcoil/decode/Options;)V
 	public static fun mapEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Ljava/lang/Object;)V
 	public static fun mapStart (Lcoil/EventListener;Lcoil/request/ImageRequest;Ljava/lang/Object;)V
@@ -92,8 +92,8 @@ public final class coil/EventListener$DefaultImpls {
 	public static fun onSuccess (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/decode/DataSource;)V
 	public static fun resolveSizeEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/size/Size;)V
 	public static fun resolveSizeStart (Lcoil/EventListener;Lcoil/request/ImageRequest;)V
-	public static fun transformEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;)V
-	public static fun transformStart (Lcoil/EventListener;Lcoil/request/ImageRequest;)V
+	public static fun transformEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Ljava/util/List;Landroid/graphics/Bitmap;)V
+	public static fun transformStart (Lcoil/EventListener;Lcoil/request/ImageRequest;Ljava/util/List;Landroid/graphics/Bitmap;)V
 	public static fun transitionEnd (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/transition/Transition;)V
 	public static fun transitionStart (Lcoil/EventListener;Lcoil/request/ImageRequest;Lcoil/transition/Transition;)V
 }
