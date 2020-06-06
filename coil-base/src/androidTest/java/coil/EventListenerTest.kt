@@ -53,7 +53,7 @@ class EventListenerTest {
             .build()
 
         runBlocking {
-            imageLoader.testLoad {
+            imageLoader.testEnqueue {
                 data("$SCHEME_ANDROID_RESOURCE://${context.packageName}/${R.drawable.normal}")
             }
         }
@@ -75,7 +75,7 @@ class EventListenerTest {
             .build()
 
         runBlocking {
-            imageLoader.testLoad {
+            imageLoader.testEnqueue {
                 data("$SCHEME_ANDROID_RESOURCE://${context.packageName}/${R.drawable.normal}")
                 transformations(CircleCropTransformation())
             }
@@ -98,7 +98,7 @@ class EventListenerTest {
             .build()
 
         runBlocking {
-            imageLoader.testLoad {
+            imageLoader.testEnqueue {
                 data("$SCHEME_ANDROID_RESOURCE://${context.packageName}/${R.drawable.normal}")
                 crossfade(true)
             }
@@ -131,7 +131,7 @@ class EventListenerTest {
 
         runBlocking {
             try {
-                imageLoader.testLoad {
+                imageLoader.testEnqueue {
                     data("fake_data")
                 }
             } catch (_: Exception) {}
@@ -140,7 +140,7 @@ class EventListenerTest {
         eventListener.complete()
     }
 
-    private suspend fun ImageLoader.testLoad(
+    private suspend fun ImageLoader.testEnqueue(
         builder: ImageRequest.Builder.() -> Unit
     ) = suspendCancellableCoroutine<Unit> { continuation ->
         val request = ImageRequest.Builder(context)
