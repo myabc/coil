@@ -28,7 +28,7 @@ internal suspend inline fun Lifecycle.awaitStarted() {
                     continuation.resume(Unit)
                 }
             }
-            observer?.let(::addObserver)
+            addObserver(observer!!)
         }
         observer?.let(::removeObserver)
     } finally {

@@ -12,8 +12,7 @@ import coil.request.RequestResult
 import coil.request.SuccessResult
 import coil.size.Scale
 import coil.util.scale
-import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.CompletionHandler
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -48,44 +47,30 @@ class CrossfadeTransition @JvmOverloads constructor(
         }
 
         // Animate the drawable and suspend until the animation is completes.
-        suspendCancellableCoroutine<Unit> { continuation ->
-            val crossfadeDrawable = createCrossfade(continuation, target, result.drawable)
-            when (result) {
-                is SuccessResult -> target.onSuccess(crossfadeDrawable)
-                is ErrorResult -> target.onError(crossfadeDrawable)
+        var outerCrossfade: CrossfadeDrawable? = null
+        try {
+            suspendCancellableCoroutine<Unit> { continuation ->
+                val innerCrossfade = CrossfadeDrawable(
+                    start = target.drawable,
+                    end = result.drawable,
+                    scale = (target.view as? ImageView)?.scale ?: Scale.FILL,
+                    durationMillis = durationMillis
+                )
+                outerCrossfade = innerCrossfade
+                innerCrossfade.registerAnimationCallback(object : Animatable2Compat.AnimationCallback() {
+                    override fun onAnimationEnd(drawable: Drawable?) {
+                        innerCrossfade.unregisterAnimationCallback(this)
+                        continuation.resume(Unit)
+                    }
+                })
+                when (result) {
+                    is SuccessResult -> target.onSuccess(innerCrossfade)
+                    is ErrorResult -> target.onError(innerCrossfade)
+                }
             }
+        } catch (_: CancellationException) {
+            // Ensure cancellation is handled on the main thread.
+            outerCrossfade?.stop()
         }
-    }
-
-    /** Create a [CrossfadeDrawable]. [continuation] will suspend until the crossfade animation completes. */
-    private fun createCrossfade(
-        continuation: CancellableContinuation<Unit>,
-        target: TransitionTarget<*>,
-        drawable: Drawable?
-    ): CrossfadeDrawable {
-        val crossfade = CrossfadeDrawable(
-            start = target.drawable,
-            end = drawable,
-            scale = (target.view as? ImageView)?.scale ?: Scale.FILL,
-            durationMillis = durationMillis
-        )
-        val callback = Callback(crossfade, continuation)
-        crossfade.registerAnimationCallback(callback)
-        continuation.invokeOnCancellation(callback)
-        return crossfade
-    }
-
-    /** Handle cancellation of the continuation and completion of the animation in one object. */
-    private class Callback(
-        private val crossfade: CrossfadeDrawable,
-        private val continuation: CancellableContinuation<Unit>
-    ) : Animatable2Compat.AnimationCallback(), CompletionHandler {
-
-        override fun onAnimationEnd(drawable: Drawable) {
-            crossfade.unregisterAnimationCallback(this)
-            continuation.resume(Unit)
-        }
-
-        override fun invoke(cause: Throwable?) = crossfade.stop()
     }
 }
