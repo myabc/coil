@@ -1,11 +1,14 @@
 package coil
 
+import android.graphics.Bitmap
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import coil.annotation.ExperimentalCoilApi
 import coil.decode.DataSource
+import coil.decode.DecodeResult
 import coil.decode.Decoder
 import coil.decode.Options
+import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.fetch.SourceResult
 import coil.map.Mapper
@@ -85,7 +88,7 @@ interface EventListener : ImageRequest.Listener {
      * @param options The [Options] that were passed to [Fetcher.fetch].
      */
     @WorkerThread
-    fun fetchEnd(request: ImageRequest, fetcher: Fetcher<*>, options: Options) {}
+    fun fetchEnd(request: ImageRequest, fetcher: Fetcher<*>, options: Options, result: FetchResult) {}
 
     /**
      * Called before [Decoder.decode].
@@ -107,23 +110,29 @@ interface EventListener : ImageRequest.Listener {
      * @param options The [Options] that were passed to [Decoder.decode].
      */
     @WorkerThread
-    fun decodeEnd(request: ImageRequest, decoder: Decoder, options: Options) {}
+    fun decodeEnd(request: ImageRequest, decoder: Decoder, options: Options, result: DecodeResult) {}
 
     /**
      * Called before any [Transformation]s are applied.
      *
      * This is skipped if [ImageRequest.transformations] is empty.
+     *
+     * @param transformations The [Transformation]s that will be applied to [input].
+     * @param input The [Bitmap] to be transformed.
      */
     @WorkerThread
-    fun transformStart(request: ImageRequest) {}
+    fun transformStart(request: ImageRequest, transformations: List<Transformation>,  input: Bitmap) {}
 
     /**
      * Called after any [Transformation]s are applied.
      *
      * This is skipped if [ImageRequest.transformations] is empty.
+     *
+     * @param transformations The [Transformation]s that were applied to [output].
+     * @param output The transformed [Bitmap].
      */
     @WorkerThread
-    fun transformEnd(request: ImageRequest) {}
+    fun transformEnd(request: ImageRequest, transformations: List<Transformation>, output: Bitmap) {}
 
     /**
      * Called before [Transition.transition].
