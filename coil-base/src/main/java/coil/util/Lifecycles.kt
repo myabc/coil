@@ -19,8 +19,8 @@ internal suspend inline fun Lifecycle.awaitStarted() {
     if (currentState.isAtLeast(STARTED)) return
 
     // Slow path: observe the lifecycle until we're started.
+    var observer: LifecycleObserver? = null
     try {
-        var observer: LifecycleObserver? = null
         suspendCancellableCoroutine<Unit> { continuation ->
             observer = object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
@@ -30,8 +30,8 @@ internal suspend inline fun Lifecycle.awaitStarted() {
             }
             addObserver(observer!!)
         }
+    } catch (throwable: Throwable) {
         observer?.let(::removeObserver)
-    } finally {
-
+        throw throwable
     }
 }

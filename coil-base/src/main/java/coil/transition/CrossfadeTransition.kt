@@ -12,7 +12,6 @@ import coil.request.RequestResult
 import coil.request.SuccessResult
 import coil.size.Scale
 import coil.util.scale
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -68,9 +67,10 @@ class CrossfadeTransition @JvmOverloads constructor(
                     is ErrorResult -> target.onError(innerCrossfade)
                 }
             }
-        } catch (_: CancellationException) {
-            // Ensure cancellation is handled on the main thread.
+        } catch (throwable: Throwable) {
+            // Ensure exceptions are handled on the main thread.
             outerCrossfade?.stop()
+            throw throwable
         }
     }
 }
